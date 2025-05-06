@@ -44,6 +44,7 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
           else
             echo "COMMITS=" >> $GITHUB_OUTPUT
+          fi
 
       # 4. Gerar o corpo (descrição) do Pull Request
       # Este script bash itera sobre os commits, formata-os e monta a descrição.
