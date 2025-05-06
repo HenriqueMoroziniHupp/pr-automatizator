@@ -8,4 +8,4 @@
 
 - Mudanças realizadas com o gpt-4.1-mini
 
-- Cloud 3.5 Sonnet no Github Copilot mandou bem
+- Cloud 3.5 Sonnet no Github Copilot mandou bem, obtive um erro mas ele propos uma solução
