@@ -1,0 +1,130 @@
+name: Criar Pull Request Automático
+
+# Define quando o workflow deve ser acionado
+on:
+  push:
+    branches-ignore: # Não executa para pushes diretos na 'main' ou 'develop'
+      - 'main'
+      - 'develop' # Adicione outras branches principais se necessário
+
+jobs:
+  create_pull_request:
+    runs-on: ubuntu-latest # Define o tipo de máquina para executar o job
+    # Condição para não executar se a branch for a 'main' (segurança extra)
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop'
+
+    steps:
+      # 1. Checkout do código do repositório
+      # O fetch-depth: 0 é importante para buscar todo o histórico de commits,
+      # permitindo a comparação correta entre branches.
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Obter o nome da branch atual
+      # GITHUB_REF tem o formato 'refs/heads/nome-da-branch'.
+      # Este passo extrai apenas 'nome-da-branch'.
+      - name: Obter nome da branch
+        id: get_branch
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
+
+      # 3. Coletar commits da branch atual que não estão na 'main'
+      # 'git log main..HEAD' lista os commits na branch atual (HEAD) que não estão na 'main'.
+      # '--pretty="format:%s"' formata a saída para mostrar apenas o assunto (mensagem) do commit.
+      # '--reverse' inverte a ordem, mostrando o commit mais antigo primeiro.
+      - name: Coletar commits
+        id: get_commits
+        run: |
+          commits=$(git log main..${{ steps.get_branch.outputs.BRANCH_NAME }} --pretty="format:%s" --reverse)
+          if [ -n "$commits" ]; then
+            echo "COMMITS<<EOF" >> $GITHUB_OUTPUT
+            echo "$commits" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "COMMITS=" >> $GITHUB_OUTPUT # Define como vazio se não houver commits
+          fi
+
+      # 4. Gerar o corpo (descrição) do Pull Request
+      # Este script bash itera sobre os commits, formata-os e monta a descrição.
+      - name: Gerar corpo do PR
+        id: generate_pr_body
+        shell: bash
+        run: |
+          IFS=$'\n' # Muda o separador de campos para nova linha
+          commit_lines_formatted=""
+          raw_commits="${{ steps.get_commits.outputs.COMMITS }}"
+
+          if [ -z "$raw_commits" ]; then
+            commit_lines_formatted="Nenhum commit novo para listar nesta branch em relação à 'main'."
+          else
+            for commit_msg in $raw_commits; do
+              # Tenta extrair 'tipo' e 'descrição' do commit
+              # Ex: "feat: Adiciona nova funcionalidade" -> tipo="feat", desc="Adiciona nova funcionalidade"
+              if [[ "$commit_msg" == *":"* ]]; then
+                commit_type=$(echo "$commit_msg" | cut -d':' -f1 | xargs) # xargs remove espaços em branco extras
+                commit_desc=$(echo "$commit_msg" | cut -d':' -f2- | sed 's/^[[:space:]]*//') # Remove espaços no início da descrição
+              else
+                # Se não seguir o padrão, classifica como 'misc'
+                commit_type="misc"
+                commit_desc="$commit_msg"
+              fi
+
+              # Mapeia o tipo do commit para um emoji correspondente
+              emoji=""
+              case "$commit_type" in
+                feat)     emoji="✨";;
+                fix)      emoji="🐛";;
+                docs)     emoji="📝";;
+                style)    emoji="💅";;
+                refactor) emoji="♻️";;
+                test)     emoji="✅";;
+                perf)     emoji="🚀";;
+                chore)    emoji="🔧";;
+                ci)       emoji="⚙️";;
+                *)        emoji="📄";; # Emoji padrão para tipos não listados ou 'misc'
+              esac
+
+              commit_lines_formatted="${commit_lines_formatted}- ${emoji} **${commit_type}:** ${commit_desc}\n"
+            done
+          fi
+
+          # Remove a última nova linha se houver commits formatados
+          if [[ -n "$commit_lines_formatted" && "$commit_lines_formatted" == *'\n' ]]; then
+              commit_lines_formatted=$(echo -e "${commit_lines_formatted%\\n}")
+          fi
+          
+          # Monta o corpo do PR usando o template fornecido
+          pr_body_content=$(cat <<EOF
+Título: Nova Release
+
+Comentário:
+#📝 Descrição
+
+${commit_lines_formatted}
+EOF
+)
+          # Escapa caracteres especiais para saída em múltiplas linhas no GitHub Actions
+          pr_body_content="${pr_body_content//'%'/'%25'}"
+          pr_body_content="${pr_body_content//$'\n'/'%0A'}"
+          pr_body_content="${pr_body_content//$'\r'/'%0D'}"
+          
+          echo "PR_BODY=$pr_body_content" >> $GITHUB_OUTPUT
+
+      # 5. Criar o Pull Request
+      # Utiliza a action 'peter-evans/create-pull-request' que é popular e robusta.
+      # Ela automaticamente lida com casos onde um PR para a branch já existe.
+      - name: Criar Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Token padrão do GitHub, geralmente suficiente
+          title: "PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main" # Título do PR
+          body: ${{ steps.generate_pr_body.outputs.PR_BODY }} # Corpo do PR gerado no passo anterior
+          branch: ${{ steps.get_branch.outputs.BRANCH_NAME }} # Branch de origem (a sua nova branch)
+          base: main # Branch de destino
+          labels: | # Etiquetas para adicionar ao PR (opcional)
+            automacao
+            nova-release
+          assignees: ${{ github.actor }} # Atribui o PR à pessoa que fez o push (opcional)
+          # reviewers: usuario1,usuario2 # Para adicionar revisores (opcional)
+          # draft: false # Define se o PR deve ser criado como rascunho (opcional)
