@@ -7,3 +7,5 @@
 - Para criar o arquivo .yml foi utilizado o Google Gemini 2.5 Pro (Experimental)
 
 - Mudanças realizadas com o gpt-4.1-mini
+
+- Cloud 3.5 Sonnet no Github Copilot mandou bem
