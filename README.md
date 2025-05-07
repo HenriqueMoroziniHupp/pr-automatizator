@@ -9,3 +9,5 @@
 - Mudanças realizadas com o gpt-4.1-mini
 
 - Cloud 3.5 Sonnet no Github Copilot mandou bem, obtive um erro mas ele propos uma solução
+
+- Ao subir um commit em uma nova branch, a action de alguma forma esta deixando ela igual a branch main
