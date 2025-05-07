@@ -26,3 +26,5 @@
 - Teste de adição commit semantico
 
 - Sucesso ! Porém essa action esta demorando por estar instalando o github cli
+
+- Testando edição de comentário caso suba um novo commit e já exista a pr aberta
