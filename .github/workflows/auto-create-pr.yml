@@ -23,11 +23,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Isso permite buscar todo o histórico
-          ref: ${{ github.head_ref }} # Referência da branch atual
+          ref: ${{ github.ref }} # Referência da branch atual
 
       # 2. Configurar Git para ter acesso a todas as branches
       - name: Configurar Git
         run: |
+          git config --global user.name '${{ github.actor }}'
+          git config --global user.email '${{ github.actor }}@users.noreply.github.com'
           git fetch origin main:main
           git fetch --all
 
@@ -109,19 +111,20 @@ jobs:
           
           echo "PR_BODY=$pr_body_content" >> $GITHUB_OUTPUT
 
-      # 5. Criar o Pull Request
+      # 5. Criar Pull Request usando hub CLI
       - name: Criar Pull Request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Token padrão do GitHub, geralmente suficiente
-          title: "PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main"
-          body: ${{ steps.generate_pr_body.outputs.PR_BODY }}
-          branch: ${{ steps.get_branch.outputs.BRANCH_NAME }}
-          base: main
-          labels: |
-            automacao
-            nova-release
-          assignees: ${{ github.actor }}
-          delete-branch: false
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Verifica se já existe um PR
+          if ! gh pr list --head ${{ steps.get_branch.outputs.BRANCH_NAME }} --json number -q '.[0].number'; then
+            # Cria PR apenas se não existir
+            gh pr create \
+              --title "PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main" \
+              --body "${{ steps.generate_pr_body.outputs.PR_BODY }}" \
+              --base main \
+              --head ${{ steps.get_branch.outputs.BRANCH_NAME }} \
+              --label "automacao" \
+              --label "nova-release" \
+              --assignee ${{ github.actor }}
+          fi
