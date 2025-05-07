@@ -20,3 +20,5 @@
 - Nada de funcionar ...
 
 - Opa ! Funcionou !! Porém com erro de formatação
+
+- Corrigido formatação pelo o3-mini
