@@ -97,16 +97,23 @@ jobs:
           && sudo apt update \
           && sudo apt install gh -y
 
-      - name: Criar Pull Request
+      - name: Criar ou atualizar Pull Request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Branch atual: ${{ steps.get_branch.outputs.BRANCH_NAME }}"
-          echo "Criando PR com título 'PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main'"
-          gh pr create \
-            --title "PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main" \
-            --body "${{ steps.generate_pr_body.outputs.PR_BODY }}" \
-            --base main \
-            --head ${{ steps.get_branch.outputs.BRANCH_NAME }} \
-            --label "automacao" \
-            --label "nova-release"
+          echo "Verificando existência de PR para a branch ${{ steps.get_branch.outputs.BRANCH_NAME }}"
+          pr_number=$(gh pr view ${{ steps.get_branch.outputs.BRANCH_NAME }} --json number --jq '.number' 2>/dev/null || true)
+          if [ -n "$pr_number" ]; then
+            echo "PR já existe: #$pr_number. Atualizando corpo do PR."
+            gh pr edit "$pr_number" --body "${{ steps.generate_pr_body.outputs.PR_BODY }}"
+          else
+            echo "Criando PR com título 'PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main'"
+            gh pr create \
+              --title "PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main" \
+              --body "${{ steps.generate_pr_body.outputs.PR_BODY }}" \
+              --base main \
+              --head ${{ steps.get_branch.outputs.BRANCH_NAME }} \
+              --label "automacao" \
+              --label "nova-release"
+          fi
