@@ -24,3 +24,5 @@
 - Corrigido formatação pelo o3-mini
 
 - Teste de adição commit semantico
+
+- Sucesso ! Porém essa action esta demorando por estar instalando o github cli
