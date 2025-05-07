@@ -43,7 +43,8 @@ jobs:
         id: get_commits
         run: |
           git fetch origin main:main
-          commits=$(git log origin/main..${{ steps.get_branch.outputs.BRANCH_NAME }} --pretty="format:%s" --reverse)
+          # Filtra commits de merge e pega apenas commits únicos
+          commits=$(git log origin/main..${{ steps.get_branch.outputs.BRANCH_NAME }} --no-merges --pretty="format:%s" --reverse)
           if [ -n "$commits" ]; then
             echo "COMMITS<<EOF" >> $GITHUB_OUTPUT
             echo "$commits" >> $GITHUB_OUTPUT
@@ -111,20 +112,32 @@ jobs:
           
           echo "PR_BODY=$pr_body_content" >> $GITHUB_OUTPUT
 
-      # 5. Criar Pull Request usando hub CLI
+      # 5. Criar Pull Request usando GitHub CLI
+      - name: Instalar GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && sudo apt update \
+          && sudo apt install gh -y
+
       - name: Criar Pull Request
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Verifica se já existe um PR
-          if ! gh pr list --head ${{ steps.get_branch.outputs.BRANCH_NAME }} --json number -q '.[0].number'; then
-            # Cria PR apenas se não existir
+          # Debug: mostra informações sobre o token e a branch
+          echo "Branch atual: ${{ steps.get_branch.outputs.BRANCH_NAME }}"
+          
+          # Tenta criar o PR e captura o resultado
+          if ! gh pr view ${{ steps.get_branch.outputs.BRANCH_NAME }} &>/dev/null; then
+            echo "Criando novo PR..."
             gh pr create \
               --title "PR Automático: ${{ steps.get_branch.outputs.BRANCH_NAME }} para main" \
               --body "${{ steps.generate_pr_body.outputs.PR_BODY }}" \
               --base main \
               --head ${{ steps.get_branch.outputs.BRANCH_NAME }} \
               --label "automacao" \
-              --label "nova-release" \
-              --assignee ${{ github.actor }}
+              --label "nova-release" || echo "Erro ao criar PR"
+          else
+            echo "PR já existe para esta branch"
           fi
