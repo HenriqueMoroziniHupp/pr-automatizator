@@ -9,6 +9,10 @@ on:
 
 jobs:
   create_pull_request:
+    permissions: # Adicionar permissões necessárias
+      contents: write
+      pull-requests: write
+
     runs-on: ubuntu-latest # Define o tipo de máquina para executar o job
     # Condição para não executar se a branch for a 'main' (segurança extra)
     if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop'
@@ -118,7 +122,6 @@ jobs:
             automacao
             nova-release
           assignees: ${{ github.actor }}
-          push-to-fork: false
           delete-branch: false
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
