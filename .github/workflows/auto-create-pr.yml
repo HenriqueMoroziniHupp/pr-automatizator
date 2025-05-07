@@ -84,7 +84,10 @@ jobs:
           fi
 
           pr_body_content="### Descrição"$'\n\n'"${commit_lines_formatted}"
-          echo "PR_BODY=$pr_body_content" >> $GITHUB_OUTPUT
+
+          echo "PR_BODY<<EOF" >> $GITHUB_OUTPUT
+          echo "$pr_body_content" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Instalar GitHub CLI
         run: |
