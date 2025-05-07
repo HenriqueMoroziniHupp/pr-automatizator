@@ -79,19 +79,11 @@ jobs:
                 ci)       emoji="⚙️";;
                 *)        emoji="📄";;
               esac
-              commit_lines_formatted="${commit_lines_formatted}- ${emoji} **${commit_type}:** ${commit_desc}\n"
+              commit_lines_formatted="${commit_lines_formatted}${emoji} **${commit_type}:** ${commit_desc}"$'\n'
             done
           fi
 
-          if [[ -n "$commit_lines_formatted" && "$commit_lines_formatted" == *'\n' ]]; then
-              commit_lines_formatted=$(echo -e "${commit_lines_formatted%\\n}")
-          fi
-
-          pr_body_content="Título: Nova Release\n\nComentário:\n#📝 Descrição\n\n${commit_lines_formatted}"
-          pr_body_content="${pr_body_content//'%'/'%25'}"
-          pr_body_content="${pr_body_content//$'\n'/'%0A'}"
-          pr_body_content="${pr_body_content//$'\r'/'%0D'}"
-          
+          pr_body_content="### Descrição"$'\n\n'"${commit_lines_formatted}"
           echo "PR_BODY=$pr_body_content" >> $GITHUB_OUTPUT
 
       - name: Instalar GitHub CLI
