@@ -14,4 +14,4 @@
 
 - A solução do Gemini 2.5 não funcionou
 
-- Subindo uma nova sugestão do Cloud 3.5 Sonnet 
+- Subindo uma nova sugestão do Cloud 3.5 Sonnet ...
