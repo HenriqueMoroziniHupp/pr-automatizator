@@ -11,3 +11,7 @@
 - Cloud 3.5 Sonnet no Github Copilot mandou bem, obtive um erro mas ele propos uma solução
 
 - Ao subir um commit em uma nova branch, a action de alguma forma esta deixando ela igual a branch main
+
+- A solução do Gemini 2.5 não funcionou
+
+- Subindo uma nova sugestão do Cloud 3.5 Sonnet 
