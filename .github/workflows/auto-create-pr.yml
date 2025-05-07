@@ -120,5 +120,6 @@ jobs:
             automacao
             nova-release
           assignees: ${{ github.actor }} # Atribui o PR à pessoa que fez o push (opcional)
+          branch-suffix: 'for-pr'
           # reviewers: usuario1,usuario2 # Para adicionar revisores (opcional)
           # draft: false # Define se o PR deve ser criado como rascunho (opcional)
