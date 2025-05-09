@@ -101,7 +101,7 @@ jobs:
             #### 📌 Lembretes:
             - [ ] Conferir branch de destino.
             - [ ] Adicionar labels (se aplicável).
-            - [ ] A documentação foi atualizada (se aplicável).
+            - [ ] Atualizar documentação (se aplicável).
             `;
 
             const finalPrBody = descriptionSection + checklistContent;
