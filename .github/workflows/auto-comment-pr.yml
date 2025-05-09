@@ -40,7 +40,9 @@ jobs:
               'test:': '✅',
               'perf:': '🚀',
               'chore:': '🔧',
-              'ci:': '⚙️'
+              'ci:': '⚙️',
+              'build:': '🧱', // Adicionado
+              'revert:': '⏪'  // Adicionado
             };
 
             const { data: commits } = await github.rest.pulls.listCommits({
