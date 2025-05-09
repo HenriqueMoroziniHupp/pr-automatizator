@@ -22,7 +22,7 @@ jobs:
     # Passos (Steps): Sequência de tarefas que compõem o job.
     steps:
       # Passo 1: Atualizar o corpo da Pull Request.
-      - name: Update PR Body
+      - name: Update PR Body with Commit List
         # Ação utilizada: actions/github-script@v7
         # Esta ação permite executar scripts que podem interagir com a API do GitHub.
         uses: actions/github-script@v7
@@ -31,11 +31,52 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Script: O código JavaScript que será executado.
           script: |
-            // Texto para definir como corpo da Pull Request.
-            const prBodyContent = `
-            Olá! Obrigado por abrir esta Pull Request! 🎉
+            const emojiMap = {
+              'feat:': '✨',
+              'fix:': '🐛',
+              'docs:': '📝',
+              'style:': '💅',
+              'refactor:': '♻️',
+              'test:': '✅',
+              'perf:': '🚀',
+              'chore:': '🔧',
+              'ci:': '⚙️'
+            };
 
-            Por favor, verifique os seguintes itens antes de prosseguir:
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            let commitDetails = "Nenhum commit encontrado.";
+            if (commits && commits.length > 0) {
+              commitDetails = commits.map(commitData => {
+                const fullMessage = commitData.commit.message.split('\n')[0]; // Pega apenas a primeira linha
+                let formattedMessage = `- ${fullMessage}`; // Formato padrão
+
+                for (const prefix in emojiMap) {
+                  if (fullMessage.toLowerCase().startsWith(prefix)) {
+                    const messageBody = fullMessage.substring(prefix.length).trim();
+                    formattedMessage = `- ${emojiMap[prefix]} **${prefix}** ${messageBody}`;
+                    break;
+                  }
+                }
+                return formattedMessage;
+              }).join('\n');
+            }
+
+            const descriptionSection = `
+            ### Descrição
+
+            ${commitDetails}
+            `;
+
+            const checklistContent = `
+
+            ---
+
+            **Lembretes:**
             - [ ] O código segue os padrões de estilo do projeto.
             - [ ] Testes unitários foram adicionados ou atualizados.
             - [ ] A documentação foi atualizada (se aplicável).
@@ -43,12 +84,12 @@ jobs:
             Nossa equipe irá revisar suas alterações em breve.
             `;
 
-            // Atualiza o corpo da Pull Request.
-            // github.rest.pulls.update é a função do cliente Octokit para atualizar PRs.
+            const finalPrBody = descriptionSection + checklistContent;
+
             await github.rest.pulls.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number, // context.issue.number refere-se ao número da PR.
-              body: prBodyContent
+              pull_number: context.issue.number,
+              body: finalPrBody
             });
-            console.log(`Corpo da PR #${context.issue.number} atualizado com sucesso.`);
+            console.log(`Corpo da PR #${context.issue.number} atualizado com a lista de commits e checklist.`);
