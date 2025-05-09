@@ -55,13 +55,14 @@ jobs:
             if (commits && commits.length > 0) {
               commitDetails = commits.map(commitData => {
                 const fullMessage = commitData.commit.message.split('\n')[0]; // Pega apenas a primeira linha
+                const commitUrl = commitData.html_url; // URL do commit
                 let formattedMessage = ''; 
                 let prefixMatched = false;
 
                 for (const prefix in emojiMap) {
                   if (fullMessage.toLowerCase().startsWith(prefix)) {
                     const messageBody = fullMessage.substring(prefix.length).trim();
-                    formattedMessage = `${emojiMap[prefix]} **${prefix}** ${messageBody}`;
+                    formattedMessage = `${emojiMap[prefix]} **${prefix}** [${messageBody}](${commitUrl})`;
                     prefixMatched = true;
                     break;
                   }
@@ -69,7 +70,7 @@ jobs:
 
                 if (!prefixMatched) {
                   // Fallback para commits sem semântica conhecida
-                  formattedMessage = `📄 **misc:** ${fullMessage}`;
+                  formattedMessage = `📄 **misc:** [${fullMessage}](${commitUrl})`;
                 }
                 
                 return formattedMessage;
@@ -86,12 +87,10 @@ jobs:
 
             ---
 
-            **Lembretes:**
-            - [ ] O código segue os padrões de estilo do projeto.
-            - [ ] Testes unitários foram adicionados ou atualizados.
+            #### 📌 Lembretes:
+            - [ ] Conferir branch de destino.
+            - [ ] Adicionar labels (se aplicável).
             - [ ] A documentação foi atualizada (se aplicável).
-
-            Nossa equipe irá revisar suas alterações em breve.
             `;
 
             const finalPrBody = descriptionSection + checklistContent;
