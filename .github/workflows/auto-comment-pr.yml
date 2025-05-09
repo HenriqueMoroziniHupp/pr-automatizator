@@ -9,7 +9,7 @@ on:
   pull_request:
     # Tipos: Especifica que o workflow deve rodar apenas quando uma PR for 'opened' (aberta).
     # Outros tipos comuns incluem 'reopened', 'synchronize' (quando novos commits são adicionados), 'closed'.
-    types: [opened]
+    types: [opened, synchronize]
 
 # Trabalhos (Jobs): Define uma ou mais tarefas que o workflow executará.
 jobs:
