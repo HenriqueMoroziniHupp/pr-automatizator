@@ -41,8 +41,9 @@ jobs:
               'perf:': '🚀',
               'chore:': '🔧',
               'ci:': '⚙️',
-              'build:': '🧱', // Adicionado
-              'revert:': '⏪'  // Adicionado
+              'build:': '🧱',
+              'revert:': '⏪',
+              'sync:': '🔄' // Adicionado para merge commits
             };
 
             const { data: commits } = await github.rest.pulls.listCommits({
@@ -59,17 +60,27 @@ jobs:
                 let formattedMessage = ''; 
                 let prefixMatched = false;
 
-                for (const prefix in emojiMap) {
-                  if (fullMessage.toLowerCase().startsWith(prefix)) {
-                    const messageBody = fullMessage.substring(prefix.length).trim();
-                    formattedMessage = `${emojiMap[prefix]} **${prefix}** [${messageBody}](${commitUrl})`;
-                    prefixMatched = true;
-                    break;
+                // Verificar primeiro se é um commit de merge
+                if (fullMessage.toLowerCase().startsWith('merge branch')) {
+                  formattedMessage = `${emojiMap['sync:']} **sync:** [${fullMessage}](${commitUrl})`;
+                  prefixMatched = true; // Consideramos como um prefixo correspondido para pular o loop abaixo
+                } else {
+                  // Se não for merge, procurar por outros prefixos semânticos
+                  for (const prefix in emojiMap) {
+                    // Ignorar 'sync:' aqui, pois já foi tratado
+                    if (prefix === 'sync:') continue; 
+                    
+                    if (fullMessage.toLowerCase().startsWith(prefix)) {
+                      const messageBody = fullMessage.substring(prefix.length).trim();
+                      formattedMessage = `${emojiMap[prefix]} **${prefix}** [${messageBody}](${commitUrl})`;
+                      prefixMatched = true;
+                      break;
+                    }
                   }
                 }
 
                 if (!prefixMatched) {
-                  // Fallback para commits sem semântica conhecida
+                  // Fallback para commits sem semântica conhecida e que não são merge
                   formattedMessage = `📄 **misc:** [${fullMessage}](${commitUrl})`;
                 }
                 
